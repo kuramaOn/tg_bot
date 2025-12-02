@@ -226,16 +226,13 @@ async def download_tiktok_instagram(update: Update, url: str):
                 'retries': config.max_retries,
                 'progress_hooks': [progress.progress_hook],
                 'prefer_ffmpeg': True,
-                'postprocessors': [
-                    {
-                        'key': 'FFmpegVideoConversionProcessor',
-                        'preferedformat': 'mp4',
-                    },
-                    {
-                        'key': 'FFmpegPostProcessor',
-                        'args': ['-vf', 'fps=30']
-                    }
-                ],
+                'postprocessors': [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4',
+                }],
+                'postprocessor_args': {
+                    'ffmpeg': ['-vf', 'fps=30']
+                },
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 },
@@ -1291,16 +1288,13 @@ async def handle_quality_callback(update: Update, context: ContextTypes.DEFAULT_
                     'retries': config.max_retries,
                     'progress_hooks': [progress.progress_hook],
                     'prefer_ffmpeg': True,
-                    'postprocessors': [
-                        {
-                            'key': 'FFmpegVideoConversionProcessor',
-                            'preferedformat': 'mp4',
-                        },
-                        {
-                            'key': 'FFmpegPostProcessor',
-                            'args': ['-vf', 'fps=30']
-                        }
-                    ] if quality != 'audio' else [],
+                    'postprocessors': [{
+                        'key': 'FFmpegVideoConvertor',
+                        'preferedformat': 'mp4',
+                    }] if quality != 'audio' else [],
+                    'postprocessor_args': {
+                        'ffmpeg': ['-vf', 'fps=30']
+                    } if quality != 'audio' else {},
                 }
 
                 # Update status
