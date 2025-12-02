@@ -213,6 +213,17 @@ async def download_tiktok_instagram(update: Update, url: str):
                 'socket_timeout': config.download_timeout,
                 'retries': config.max_retries,
                 'progress_hooks': [progress.progress_hook],
+                'prefer_ffmpeg': True,
+                'postprocessors': [
+                    {
+                        'key': 'FFmpegVideoConversionProcessor',
+                        'preferedformat': 'mp4',
+                    },
+                    {
+                        'key': 'FFmpegPostProcessor',
+                        'args': ['-vf', 'fps=30']
+                    }
+                ],
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 },
@@ -1267,11 +1278,17 @@ async def handle_quality_callback(update: Update, context: ContextTypes.DEFAULT_
                     'socket_timeout': 60,
                     'retries': config.max_retries,
                     'progress_hooks': [progress.progress_hook],
-                    # Disable post-processing to avoid ffmpeg requirement for audio
-                    # Download M4A directly without conversion to MP3
-                    'postprocessors': [],
-                    'prefer_ffmpeg': False,
-                    'extract_audio': False,  # Don't try to extract/convert audio
+                    'prefer_ffmpeg': True,
+                    'postprocessors': [
+                        {
+                            'key': 'FFmpegVideoConversionProcessor',
+                            'preferedformat': 'mp4',
+                        },
+                        {
+                            'key': 'FFmpegPostProcessor',
+                            'args': ['-vf', 'fps=30']
+                        }
+                    ] if quality != 'audio' else [],
                 }
 
                 # Update status
