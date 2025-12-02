@@ -13,6 +13,7 @@ import signal
 import sys
 import psutil
 import logging
+from logging.handlers import RotatingFileHandler
 from typing import Optional
 from functools import partial
 import threading
@@ -53,16 +54,27 @@ except ConfigurationError as e:
     print("Please set BOT_TOKEN environment variable and try again.")
     sys.exit(1)
 
-# Configure logging with config level and UTF-8 encoding
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=config.get_log_level(),
-    handlers=[
-        logging.FileHandler('bot.log', encoding='utf-8'),
-        logging.StreamHandler()
-    ]
-)
+# Configure logging with rotating file handler to prevent huge log files
 logger = logging.getLogger(__name__)
+logger.setLevel(config.get_log_level())
+
+# Create formatters
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Create rotating file handler (max 5MB per file, keep 3 backup files)
+file_handler = RotatingFileHandler(
+    'bot.log',
+    maxBytes=5 * 1024 * 1024,  # 5MB
+    backupCount=3,
+    encoding='utf-8'
+)
+file_handler.setFormatter(formatter)
+logger.addHandler(file_handler)
+
+# Create console handler
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 # Initialize rate limiter and resource manager
 rate_limiter = RateLimiter(
@@ -1458,6 +1470,35 @@ async def handle_quality_callback(update: Update, context: ContextTypes.DEFAULT_
         except:
             pass
 
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle errors in telegram bot polling."""
+    error = context.error
+
+    # Handle Conflict error (multiple instances)
+    if isinstance(error, Conflict):
+        logger.critical(
+            f"❌ BOT CONFLICT ERROR: {error}\n"
+            f"Another bot instance is already running with this token.\n"
+            f"Please ensure only ONE bot instance is running at a time."
+        )
+        print("\n" + "="*70)
+        print("❌ CRITICAL ERROR: Conflict Error")
+        print("="*70)
+        print(f"Message: {error}")
+        print("\nCause: Another instance of this bot is already running!")
+        print("Solution: Kill all other bot instances and restart.")
+        print("="*70 + "\n")
+        # Exit gracefully
+        sys.exit(1)
+
+    # Handle network errors gracefully
+    elif isinstance(error, (NetworkError, TimedOut)):
+        logger.warning(f"⚠️ Network error: {error}. Will retry automatically.")
+        return
+
+    # Log all other errors
+    logger.error(f"Update {update} caused error: {error}")
+
 def main():
     """Main function to run the bot with enhanced error handling."""
     try:
@@ -1483,7 +1524,10 @@ def main():
         # Add callback and message handlers
         application.add_handler(CallbackQueryHandler(handle_quality_callback, pattern="^(quality|info|refresh):"))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-        
+
+        # Add error handler
+        application.add_error_handler(error_handler)
+
         logger.info("✅ Bot handlers configured successfully")
         print("✅ Bot is running! Press Ctrl+C to stop.")
         print("🔍 Bot logs are being saved to 'bot.log'")
