@@ -1523,8 +1523,16 @@ def main():
         print(f"📊 Configuration: Max file size: {config.max_file_size//1024//1024}MB, Timeout: {config.download_timeout}s")
         print("✅ All platforms enabled: YouTube, TikTok, Instagram")
         
-        # Create application
-        application = Application.builder().token(config.token).build()
+        # Create application with increased timeouts for large file uploads
+        application = (
+            Application.builder()
+            .token(config.token)
+            .read_timeout(60)  # 60 seconds for reading
+            .write_timeout(120)  # 120 seconds for writing large files
+            .connect_timeout(30)  # 30 seconds for connection
+            .pool_timeout(10)  # 10 seconds for pool
+            .build()
+        )
         
         # Add command handlers
         application.add_handler(CommandHandler("start", start_command))
