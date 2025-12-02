@@ -1303,6 +1303,7 @@ async def handle_quality_callback(update: Update, context: ContextTypes.DEFAULT_
                     'retries': config.max_retries,
                     'progress_hooks': [progress.progress_hook],
                     'prefer_ffmpeg': True,
+                    'restrictfilenames': True,  # Sanitize filenames for Windows
                     'postprocessors': [{
                         'key': 'FFmpegVideoConvertor',
                         'preferedformat': 'mp4',
