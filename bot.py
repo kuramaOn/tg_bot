@@ -2,6 +2,7 @@
 """
 🎬 Video Downloader Bot - Enhanced Version with Error Handling
 Complete YouTube quality callback handler with security improvements
+Deployment: 2025-12-04 - Fixed TikTok/Instagram extraction
 """
 
 import os
