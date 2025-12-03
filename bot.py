@@ -343,13 +343,27 @@ async def download_tiktok_instagram(update: Update, url: str):
                 f"⏳ ခေတ္တစောင့်ပါ..."
             )
 
-            # Send video to user
-            with open(downloaded_file, 'rb') as video_file:
-                await update.message.reply_video(
-                    video=video_file,
-                    caption=f"🎬 {title}\n\n📱 {platform} မှ ဒေါင်းလုဒ်\n📁 {file_size_mb:.1f}MB",
-                    supports_streaming=True
-                )
+            # Send video to user with retry logic for large files
+            max_retries = 2
+            for attempt in range(max_retries):
+                try:
+                    with open(downloaded_file, 'rb') as video_file:
+                        await update.message.reply_video(
+                            video=video_file,
+                            caption=f"🎬 {title}\n\n📱 {platform} မှ ဒေါင်းလုဒ်\n📁 {file_size_mb:.1f}MB",
+                            supports_streaming=True,
+                            read_timeout=90,
+                            write_timeout=180,
+                            connect_timeout=60,
+                            pool_timeout=15
+                        )
+                    break  # Success, exit retry loop
+                except TimedOut as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Upload timed out (attempt {attempt + 1}/{max_retries}), retrying...")
+                        await asyncio.sleep(2)  # Wait before retry
+                    else:
+                        raise  # Final attempt failed, raise the error
 
             # Delete status message
             await safe_delete_message(status_message)
@@ -1520,10 +1534,10 @@ def main():
         application = (
             Application.builder()
             .token(config.token)
-            .read_timeout(60)  # 60 seconds for reading
-            .write_timeout(120)  # 120 seconds for writing large files
-            .connect_timeout(30)  # 30 seconds for connection
-            .pool_timeout(10)  # 10 seconds for pool
+            .read_timeout(90)  # 90 seconds for reading (increased for slow connections)
+            .write_timeout(180)  # 180 seconds for writing large files (3 minutes for TikTok videos)
+            .connect_timeout(60)  # 60 seconds for connection (increased)
+            .pool_timeout(15)  # 15 seconds for pool (increased)
             .build()
         )
         
