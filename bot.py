@@ -241,8 +241,14 @@ async def download_tiktok_instagram(update: Update, url: str):
                     'Sec-Fetch-Mode': 'navigate',
                     'Sec-Fetch-Site': 'none',
                     'Sec-Fetch-User': '?1',
+                    'Referer': 'https://www.tiktok.com/',
                 },
                 'extractor_args': {
+                    'tiktok': {
+                        'api_hostname': 'api22-normal-c-useast2a.tiktokv.com',
+                        'app_version': '34.1.2',
+                        'manifest_app_version': '341',
+                    },
                     'instagram': {
                         'api_type': 'graphql'
                     }
