@@ -241,18 +241,9 @@ async def download_tiktok_instagram(update: Update, url: str):
                     'Sec-Fetch-Mode': 'navigate',
                     'Sec-Fetch-Site': 'none',
                     'Sec-Fetch-User': '?1',
-                    'Referer': 'https://www.tiktok.com/',
                 },
-                'extractor_args': {
-                    'tiktok': {
-                        'api_hostname': 'api22-normal-c-useast2a.tiktokv.com',
-                        'app_version': '34.1.2',
-                        'manifest_app_version': '341',
-                    },
-                    'instagram': {
-                        'api_type': 'graphql'
-                    }
-                },
+                # Let yt-dlp use its built-in, up-to-date TikTok extractor
+                # Removed outdated extractor_args that were causing failures
             }
 
             # Update status
@@ -380,13 +371,36 @@ async def download_tiktok_instagram(update: Update, url: str):
         error_msg = str(e)
         logger.error(f"{platform} download error: {error_msg}")
 
-        if 'private' in error_msg.lower() or 'unavailable' in error_msg.lower():
+        # Check for Instagram authentication issues
+        if platform == "Instagram" and ('login' in error_msg.lower() or 'rate-limit' in error_msg.lower() or 'cookies' in error_msg.lower()):
+            await status_message.edit_text(
+                f"❌ Instagram ဗီဒီယို ရယူ၍ မရပါ။\n\n"
+                "🔐 **အကြောင်းရင်း:**\n"
+                "Instagram သည် လောလောဆယ် ထပ်ဆောင်း အတည်ပြုမှု လိုအပ်သည်\n\n"
+                "💡 **အကြံပြုချက်:**\n"
+                "• နောက်မှ ထပ်ကြိုးစားပါ\n"
+                "• အကောင့် ဝင်ရန် မလိုအပ်သော ဗီဒီယို သုံးပါ\n"
+                "• YouTube သို့မဟုတ် TikTok ကို စမ်းကြည့်ပါ\n\n"
+                "⚠️ Instagram သည် bot များကို ကန့်သတ်ထားသည်"
+            )
+        elif 'private' in error_msg.lower() or 'unavailable' in error_msg.lower():
             await status_message.edit_text(
                 f"❌ {platform} ဗီဒီယို ရယူ၍ မရပါ။\n\n"
                 "ဖြစ်နိုင်သော အကြောင်းရင်းများ:\n"
                 "• ဗီဒီယို ပုဂ္ဂလိက ဖြစ်နေသည်\n"
                 "• အကောင့် လိုအပ်သည်\n"
                 "• နိုင်ငံ ကန့်သတ်ချက် ရှိသည်"
+            )
+        elif 'extract' in error_msg.lower() and platform == "TikTok":
+            await status_message.edit_text(
+                f"❌ TikTok ဗီဒီယို ရယူ၍ မရပါ။\n\n"
+                "🔧 **ဖြစ်နိုင်သော ပြဿနာများ:**\n"
+                "• TikTok သည် ၎င်း၏ လုံခြုံရေး ပြောင်းလဲခဲ့သည်\n"
+                "• ဗီဒီယို ပုဂ္ဂလိက ဖြစ်နေသည်\n"
+                "• ဒေသဆိုင်ရာ ကန့်သတ်ချက် ရှိသည်\n\n"
+                "💡 **အကြံပြုချက်:**\n"
+                "• အခြား TikTok လင့်ခ် စမ်းကြည့်ပါ\n"
+                "• နောက်မှ ထပ်ကြိုးစားပါ"
             )
         else:
             await status_message.edit_text(
