@@ -167,9 +167,10 @@ class BotConfig:
 
 
 # Quality format mappings for YouTube
+# Format priority: 1) Pre-merged single file, 2) Best video+audio for merging
 QUALITY_FORMATS = {
-    '360p': 'best[height<=360][ext=mp4]/best[height<=360]/best[ext=mp4]/best',
-    '480p': 'best[height<=480][ext=mp4]/best[height<=480]/best[ext=mp4]/best',
+    '360p': 'best[height<=360][ext=mp4]/bestvideo[height<=360][ext=mp4]+bestaudio[ext=m4a]/best[height<=360]',
+    '480p': 'best[height<=480][ext=mp4]/bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480]',
     'audio': 'bestaudio[ext=m4a]/bestaudio',
 }
 

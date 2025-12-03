@@ -212,7 +212,8 @@ async def download_tiktok_instagram(update: Update, url: str):
     try:
         # Create temp directory for download
         with tempfile.TemporaryDirectory() as temp_dir:
-            output_template = os.path.join(temp_dir, '%(title)s.%(ext)s')
+            # Use sanitized filename to avoid special character issues on Windows
+            output_template = os.path.join(temp_dir, 'video.%(ext)s')
 
             # Progress tracker
             progress = DownloadProgress()
@@ -225,14 +226,9 @@ async def download_tiktok_instagram(update: Update, url: str):
                 'socket_timeout': config.download_timeout,
                 'retries': config.max_retries,
                 'progress_hooks': [progress.progress_hook],
-                'prefer_ffmpeg': True,
-                'postprocessors': [{
-                    'key': 'FFmpegVideoConvertor',
-                    'preferedformat': 'mp4',
-                }],
-                'postprocessor_args': {
-                    'ffmpeg': ['-vf', 'fps=30']
-                },
+                'merge_output_format': 'mp4',
+                # Preserve original video and audio streams without re-encoding
+                'postprocessor_args': ['-c:v', 'copy', '-c:a', 'copy'],
                 'http_headers': {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
@@ -1289,7 +1285,8 @@ async def handle_quality_callback(update: Update, context: ContextTypes.DEFAULT_
                     format_str = QUALITY_FORMATS['360p']
                     is_audio = False
 
-                output_template = os.path.join(temp_dir, f'%(title)s.%(ext)s')
+                # Use sanitized filename to avoid special character issues on Windows
+                output_template = os.path.join(temp_dir, 'youtube_video.%(ext)s')
 
                 # Progress tracker
                 progress = DownloadProgress()
@@ -1302,15 +1299,10 @@ async def handle_quality_callback(update: Update, context: ContextTypes.DEFAULT_
                     'socket_timeout': 60,
                     'retries': config.max_retries,
                     'progress_hooks': [progress.progress_hook],
-                    'prefer_ffmpeg': True,
                     'restrictfilenames': True,  # Sanitize filenames for Windows
-                    'postprocessors': [{
-                        'key': 'FFmpegVideoConvertor',
-                        'preferedformat': 'mp4',
-                    }] if quality != 'audio' else [],
-                    'postprocessor_args': {
-                        'ffmpeg': ['-vf', 'fps=30']
-                    } if quality != 'audio' else {},
+                    'merge_output_format': 'mp4' if quality != 'audio' else None,
+                    # Configure FFmpeg merger to preserve original streams when merging
+                    'postprocessor_args': ['-c:v', 'copy', '-c:a', 'aac'] if quality != 'audio' else [],
                 }
 
                 # Update status
